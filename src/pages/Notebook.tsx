@@ -1,26 +1,433 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NotebookPen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { NotebookPen, Plus, Edit, Trash2, Search, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface NotebookPage {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  category: string;
+}
 
 const Notebook: React.FC = () => {
+  const [pages, setPages] = useState<NotebookPage[]>([
+    {
+      id: '1',
+      title: 'Reflexões sobre produtividade',
+      content: `## Pensamentos do dia
+
+Hoje percebi que a verdadeira produtividade não está em fazer mais coisas, mas em fazer as coisas certas. 
+
+### Insights importantes:
+- Focar no que realmente importa
+- Eliminar distrações desnecessárias  
+- Criar sistemas sustentáveis
+
+**Ação:** Implementar técnica Pomodoro na rotina diária.`,
+      tags: ['produtividade', 'reflexão', 'autodesenvolvimento'],
+      createdAt: new Date('2024-06-01'),
+      updatedAt: new Date('2024-06-01'),
+      category: 'Pessoal'
+    },
+    {
+      id: '2',
+      title: 'Ideias para projeto pessoal',
+      content: `# App de Organização Pessoal
+
+## Funcionalidades principais:
+- [ ] Sistema de tarefas com prioridades
+- [ ] Tracker de hábitos
+- [ ] Calendário integrado
+- [ ] Notas e reflexões
+
+## Tecnologias:
+- React + TypeScript
+- Tailwind CSS
+- LocalStorage para dados
+
+**Próximos passos:** Criar wireframes e começar prototipação.`,
+      tags: ['projeto', 'app', 'desenvolvimento'],
+      createdAt: new Date('2024-06-02'),
+      updatedAt: new Date('2024-06-02'),
+      category: 'Trabalho'
+    },
+    {
+      id: '3',
+      title: 'Lista de livros interessantes',
+      content: `# Livros para ler
+
+## Desenvolvimento Pessoal
+- Atomic Habits - James Clear ✓
+- Deep Work - Cal Newport
+- The Power of Now - Eckhart Tolle
+
+## Tecnologia  
+- Clean Architecture - Robert C. Martin
+- System Design Interview - Alex Xu
+- Designing Data-Intensive Applications
+
+## Ficção
+- 1984 - George Orwell
+- Sapiens - Yuval Noah Harari
+
+*Objetivo: ler 2 livros por mês*`,
+      tags: ['livros', 'leitura', 'objetivos'],
+      createdAt: new Date('2024-06-03'),
+      updatedAt: new Date('2024-06-03'),
+      category: 'Educação'
+    }
+  ]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPage, setEditingPage] = useState<NotebookPage | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
+  const [newPage, setNewPage] = useState({
+    title: '',
+    content: '',
+    category: '',
+    tags: ''
+  });
+
+  const allTags = Array.from(new Set(pages.flatMap(page => page.tags))).sort();
+  const categories = Array.from(new Set(pages.map(page => page.category))).filter(Boolean);
+
+  const filteredPages = pages.filter(page => {
+    const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         page.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         page.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesTag = !selectedTag || page.tags.includes(selectedTag);
+    return matchesSearch && matchesTag;
+  });
+
+  const recentPages = pages.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 5);
+
+  const handleSavePage = () => {
+    if (!newPage.title) return;
+
+    const tags = newPage.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+
+    if (editingPage) {
+      setPages(pages.map(page => 
+        page.id === editingPage.id 
+          ? { 
+              ...page, 
+              title: newPage.title,
+              content: newPage.content,
+              category: newPage.category,
+              tags,
+              updatedAt: new Date() 
+            }
+          : page
+      ));
+    } else {
+      const page: NotebookPage = {
+        id: Date.now().toString(),
+        title: newPage.title,
+        content: newPage.content,
+        category: newPage.category,
+        tags,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      setPages([...pages, page]);
+    }
+
+    setNewPage({ title: '', content: '', category: '', tags: '' });
+    setEditingPage(null);
+    setIsDialogOpen(false);
+  };
+
+  const handleEditPage = (page: NotebookPage) => {
+    setEditingPage(page);
+    setNewPage({
+      title: page.title,
+      content: page.content,
+      category: page.category,
+      tags: page.tags.join(', ')
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeletePage = (pageId: string) => {
+    setPages(pages.filter(page => page.id !== pageId));
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <NotebookPen className="h-8 w-8 text-pink-500" />
-        <h1 className="text-3xl font-bold text-pink-900">Caderno</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <NotebookPen className="h-8 w-8 text-pink-500" />
+          <h1 className="text-3xl font-bold text-pink-900">Caderno</h1>
+        </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-pink-500 hover:bg-pink-600">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Página
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-pink-900">
+                {editingPage ? 'Editar Página' : 'Nova Página'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  value={newPage.title}
+                  onChange={(e) => setNewPage({...newPage, title: e.target.value})}
+                  placeholder="Título da página"
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Categoria</Label>
+                <Input
+                  id="category"
+                  value={newPage.category}
+                  onChange={(e) => setNewPage({...newPage, category: e.target.value})}
+                  placeholder="Ex: Pessoal, Trabalho, Educação..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                <Input
+                  id="tags"
+                  value={newPage.tags}
+                  onChange={(e) => setNewPage({...newPage, tags: e.target.value})}
+                  placeholder="Ex: reflexão, ideias, projeto"
+                />
+              </div>
+              <div>
+                <Label htmlFor="content">Conteúdo</Label>
+                <Textarea
+                  id="content"
+                  value={newPage.content}
+                  onChange={(e) => setNewPage({...newPage, content: e.target.value})}
+                  placeholder="Escreva o conteúdo da página aqui... (Suporte a Markdown)"
+                  rows={12}
+                  className="font-mono"
+                />
+              </div>
+              <Button onClick={handleSavePage} className="w-full bg-pink-500 hover:bg-pink-600">
+                {editingPage ? 'Atualizar' : 'Criar'} Página
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-pink-900">Seu Caderno Pessoal</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-pink-600">
-            Caderno pessoal em desenvolvimento...
-          </p>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="all">Todas as Páginas</TabsTrigger>
+          <TabsTrigger value="recent">Recentes</TabsTrigger>
+          <TabsTrigger value="search">Buscar</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={selectedTag === '' ? 'default' : 'outline'}
+              onClick={() => setSelectedTag('')}
+              className={selectedTag === '' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+            >
+              Todas
+            </Button>
+            {allTags.map(tag => (
+              <Button
+                key={tag}
+                variant={selectedTag === tag ? 'default' : 'outline'}
+                onClick={() => setSelectedTag(tag)}
+                className={selectedTag === tag ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+              >
+                #{tag}
+              </Button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredPages.map((page) => (
+              <Card key={page.id} className="border-pink-200 hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-pink-900 text-lg">{page.title}</CardTitle>
+                      {page.category && (
+                        <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
+                          {page.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditPage(page)}
+                        className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeletePage(page.id)}
+                        className="border-red-300 text-red-700 hover:bg-red-100"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <p className="text-pink-600 text-sm line-clamp-4">
+                      {page.content.substring(0, 150)}...
+                    </p>
+                    
+                    {page.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {page.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs border-pink-300 text-pink-600">
+                            #{tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p className="text-pink-400 text-xs">
+                      Atualizada: {page.updatedAt.toLocaleDateString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="recent" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {recentPages.map((page) => (
+              <Card key={page.id} className="border-pink-200">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-pink-900 text-lg">{page.title}</CardTitle>
+                      {page.category && (
+                        <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
+                          {page.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditPage(page)}
+                      className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-pink-600 text-sm line-clamp-3">
+                    {page.content.substring(0, 200)}...
+                  </p>
+                  <p className="text-pink-400 text-xs mt-3">
+                    {page.updatedAt.toLocaleDateString()} às {page.updatedAt.toLocaleTimeString()}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="search" className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar em páginas, conteúdo e tags..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 border-pink-200 focus:border-pink-400"
+            />
+          </div>
+
+          {searchTerm && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredPages.map((page) => (
+                <Card key={page.id} className="border-pink-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-pink-900 text-lg">{page.title}</CardTitle>
+                        {page.category && (
+                          <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
+                            {page.category}
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditPage(page)}
+                        className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-pink-600 text-sm line-clamp-3">
+                      {page.content.substring(0, 200)}...
+                    </p>
+                    {page.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {page.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs border-pink-300 text-pink-600">
+                            #{tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {searchTerm && filteredPages.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-8">
+                <Search className="h-12 w-12 text-pink-300 mx-auto mb-4" />
+                <p className="text-pink-600">Nenhuma página encontrada para "{searchTerm}"</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {pages.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <FileText className="h-12 w-12 text-pink-300 mx-auto mb-4" />
+            <p className="text-pink-600">Nenhuma página criada ainda</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
