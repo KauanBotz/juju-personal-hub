@@ -23,7 +23,7 @@ const Settings: React.FC = () => {
   });
   const [profile, setProfile] = useState({
     name: 'Julia Pena',
-    email: 'julia.pena@email.com',
+    email: 'juliapena002@gmail.com',
     timezone: 'America/Sao_Paulo'
   });
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -35,56 +34,53 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <div className="w-64 bg-pink-50 border-r border-pink-200 flex flex-col">
-      <div className="p-6 border-b border-pink-200">
-        <div className="flex items-center space-x-3">
-          <Avatar>
-            <AvatarFallback className="bg-pink-200 text-pink-800">
-              <User className="h-4 w-4" />
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h2 className="font-semibold text-pink-900">Julia Pena</h2>
-            <p className="text-sm text-pink-600">Personal Hub</p>
-          </div>
-        </div>
+    <aside className="w-20 bg-white shadow-lg flex flex-col justify-between">
+      {/* Avatar + collapse hint */}
+      <div className="flex flex-col items-center py-6 space-y-4">
+        <Avatar className="ring-2 ring-pink-300">
+          <AvatarFallback className="bg-pink-200 text-pink-800">
+            <User className="h-6 w-6" />
+          </AvatarFallback>
+        </Avatar>
+        <p className="text-xs text-pink-600 truncate w-full text-center">
+          {'Júlia Pena'}
+        </p>
       </div>
 
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                    isActive 
-                      ? 'bg-pink-200 text-pink-900' 
-                      : 'text-pink-700 hover:bg-pink-100'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      {/* Ícones do menu */}
+      <nav className="flex-1 flex flex-col items-center space-y-2">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`
+                flex items-center justify-center w-12 h-12 rounded-xl transition-colors duration-200
+                ${isActive 
+                  ? 'bg-pink-100 text-pink-600 shadow-md' 
+                  : 'text-pink-400 hover:bg-pink-50 hover:text-pink-600'}
+              `}
+              title={item.label}
+            >
+              <Icon className="h-6 w-6" />
+            </Link>
+          );
+        })}
       </nav>
 
-      <div className="p-4 border-t border-pink-200">
-        <Button 
+      {/* Logout + settings extra */}
+      <div className="flex flex-col items-center pb-6 space-y-2">
+        <Button
           onClick={logout}
-          variant="outline"
-          className="w-full border-pink-300 text-pink-700 hover:bg-pink-100"
+          variant="ghost"
+          className="p-2 rounded-full text-pink-400 hover:bg-pink-50 hover:text-pink-600"
+          title={t('logout')}
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          {t('logout')}
+          <LogOut className="h-6 w-6" />
         </Button>
       </div>
-    </div>
+    </aside>
   );
 };

@@ -58,15 +58,15 @@ const Home: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-pink-700">3</p>
+              <p className="text-xl sm:text-2xl font-bold text-pink-700">0</p>
               <p className="text-pink-600 text-sm sm:text-base">{t('pendingTasks')}</p>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-pink-700">5</p>
+              <p className="text-xl sm:text-2xl font-bold text-pink-700">0</p>
               <p className="text-pink-600 text-sm sm:text-base">{t('habitsToday')}</p>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-pink-700">2</p>
+              <p className="text-xl sm:text-2xl font-bold text-pink-700">0</p>
               <p className="text-pink-600 text-sm sm:text-base">{t('appointments')}</p>
             </div>
           </div>

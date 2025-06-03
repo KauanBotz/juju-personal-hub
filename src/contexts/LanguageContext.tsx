@@ -165,7 +165,7 @@ const translations = {
     loginButton: 'Entrar',
     
     // Home
-    homeWelcome: 'Bem-vinda ao seu hub pessoal de produtividade',
+    homeWelcome: 'Aproveita tudo que podemos fazer para te ajudar!',
     manageAppointments: 'Gerencie seus compromissos',
     noteIdeas: 'Anote suas ideias',
     trackHabits: 'Acompanhe seus hábitos',

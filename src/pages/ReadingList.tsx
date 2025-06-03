@@ -28,45 +28,6 @@ interface Book {
 
 const ReadingList: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([
-    {
-      id: '1',
-      title: 'Clean Code',
-      author: 'Robert C. Martin',
-      genre: 'Tecnologia',
-      status: 'reading',
-      rating: 0,
-      notes: 'Excelente livro sobre boas práticas de programação',
-      pages: 464,
-      currentPage: 150,
-      startDate: '2024-05-01',
-      addedAt: new Date('2024-05-01')
-    },
-    {
-      id: '2',
-      title: 'Atomic Habits',
-      author: 'James Clear',
-      genre: 'Desenvolvimento Pessoal',
-      status: 'completed',
-      rating: 5,
-      notes: 'Transformador! Mudou minha perspectiva sobre formação de hábitos.',
-      pages: 320,
-      currentPage: 320,
-      startDate: '2024-04-01',
-      endDate: '2024-04-20',
-      addedAt: new Date('2024-04-01')
-    },
-    {
-      id: '3',
-      title: 'The Psychology of Programming',
-      author: 'Gerald M. Weinberg',
-      genre: 'Tecnologia',
-      status: 'to-read',
-      rating: 0,
-      notes: '',
-      pages: 288,
-      currentPage: 0,
-      addedAt: new Date('2024-06-01')
-    }
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);

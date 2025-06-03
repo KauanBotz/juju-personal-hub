@@ -21,45 +21,6 @@ interface Habit {
 
 const Habits: React.FC = () => {
   const [habits, setHabits] = useState<Habit[]>([
-    {
-      id: '1',
-      name: 'Beber água',
-      description: 'Beber 8 copos de água por dia',
-      target: 8,
-      frequency: 'daily',
-      completions: {
-        '2024-06-03': 6,
-        '2024-06-02': 8,
-        '2024-06-01': 5
-      },
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: '2',
-      name: 'Exercícios',
-      description: 'Fazer exercícios físicos',
-      target: 1,
-      frequency: 'daily',
-      completions: {
-        '2024-06-03': 1,
-        '2024-06-02': 1,
-        '2024-06-01': 0
-      },
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: '3',
-      name: 'Leitura',
-      description: 'Ler por 30 minutos',
-      target: 1,
-      frequency: 'daily',
-      completions: {
-        '2024-06-03': 0,
-        '2024-06-02': 1,
-        '2024-06-01': 1
-      },
-      createdAt: new Date('2024-01-01')
-    }
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);

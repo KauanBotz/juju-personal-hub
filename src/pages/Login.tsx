@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -18,7 +17,7 @@ const Login: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (login(username, password)) {
       navigate('/home');
     } else {
@@ -27,56 +26,66 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 to-rose-100">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Heart className="h-12 w-12 text-pink-500" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-pink-900">Juju Personal Hub</CardTitle>
-          <CardDescription className="text-pink-600">
-            Entre com suas credenciais para acessar
-          </CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-pink-200 to-red-200">
+      <Card className="w-full max-w-sm bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl">
+        <CardHeader className="text-center mt-8">
+          <CardTitle className="text-3xl font-extrabold text-pink-600">
+            Seja bem-vinda Julia!
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="julia.pena"
-                className="border-pink-200 focus:border-pink-400"
-              />
+          <form onSubmit={handleSubmit} className="space-y-6 px-6 pb-8">
+            <div className="relative">
+              <Label htmlFor="username" className="text-gray-700">
+                Usuário
+              </Label>
+              <div className="flex items-center border border-pink-300 rounded-lg mt-1 focus-within:ring-2 focus-within:ring-pink-400">
+                <span className="px-3 text-pink-400">
+                  <User size={20} />
+                </span>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="julia.pena"
+                  className="flex-1 bg-transparent focus:outline-none py-2 pr-3 text-gray-800 placeholder-gray-400"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="border-pink-200 focus:border-pink-400"
-              />
+            <div className="relative">
+              <Label htmlFor="password" className="text-gray-700">
+                Senha
+              </Label>
+              <div className="flex items-center border border-pink-300 rounded-lg mt-1 focus-within:ring-2 focus-within:ring-pink-400">
+                <span className="px-3 text-pink-400">
+                  <Lock size={20} />
+                </span>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="flex-1 bg-transparent focus:outline-none py-2 pr-3 text-gray-800 placeholder-gray-400"
+                />
+              </div>
             </div>
             {error && (
-              <p className="text-red-500 text-sm">{error}</p>
+              <p className="text-red-500 text-sm text-center">{error}</p>
             )}
-            <Button 
-              type="submit" 
-              className="w-full bg-pink-500 hover:bg-pink-600"
+            <Button
+              type="submit"
+              className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg py-2 transition duration-200"
             >
               Entrar
             </Button>
+            <div className="text-center mt-4">
+              <a href="#" className="text-sm text-pink-600 hover:underline">
+                Esqueci minha senha
+              </a>
+            </div>
           </form>
-          <div className="mt-4 text-center text-sm text-pink-600">
-            <p>Credenciais de teste:</p>
-            <p>Usuário: julia.pena</p>
-            <p>Senha: juliapena123</p>
-          </div>
         </CardContent>
       </Card>
     </div>
