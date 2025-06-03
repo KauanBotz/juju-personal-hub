@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Goal {
   id: string;
@@ -32,39 +34,8 @@ interface Task {
 }
 
 const ActionPlan: React.FC = () => {
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: '1',
-      title: 'Aprender React Avançado',
-      description: 'Dominar hooks avançados, context API e performance optimization',
-      category: 'Desenvolvimento',
-      priority: 'high',
-      status: 'in-progress',
-      targetDate: '2024-12-31',
-      progress: 60,
-      tasks: [
-        { id: '1', title: 'Estudar useCallback e useMemo', completed: true, createdAt: new Date() },
-        { id: '2', title: 'Implementar Context API', completed: true, createdAt: new Date() },
-        { id: '3', title: 'Otimizar performance da aplicação', completed: false, createdAt: new Date() }
-      ],
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: '2',
-      title: 'Formar hábito de exercícios',
-      description: 'Exercitar-se 5 vezes por semana por 3 meses',
-      category: 'Saúde',
-      priority: 'medium',
-      status: 'in-progress',
-      targetDate: '2024-09-30',
-      progress: 40,
-      tasks: [
-        { id: '4', title: 'Definir rotina de exercícios', completed: true, createdAt: new Date() },
-        { id: '5', title: 'Comprar equipamentos necessários', completed: false, createdAt: new Date() }
-      ],
-      createdAt: new Date('2024-02-01')
-    }
-  ]);
+  const { t } = useLanguage();
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -186,69 +157,69 @@ const ActionPlan: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <Target className="h-8 w-8 text-pink-500" />
-          <h1 className="text-3xl font-bold text-pink-900">Plano de Ação</h1>
+          <Target className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-pink-900">{t('actionPlan')}</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-pink-500 hover:bg-pink-600">
+            <Button className="bg-pink-500 hover:bg-pink-600 w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Objetivo
+              {t('newGoal')}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md">
             <DialogHeader>
               <DialogTitle className="text-pink-900">
-                {editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}
+                {editingGoal ? t('editGoal') : t('newGoal')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">{t('title')}</Label>
                 <Input
                   id="title"
                   value={newGoal.title}
                   onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
-                  placeholder="Título do objetivo"
+                  placeholder={t('goalTitlePlaceholder')}
                 />
               </div>
               <div>
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">{t('description')}</Label>
                 <Textarea
                   id="description"
                   value={newGoal.description}
                   onChange={(e) => setNewGoal({...newGoal, description: e.target.value})}
-                  placeholder="Descrição detalhada"
+                  placeholder={t('detailedDescription')}
                 />
               </div>
               <div>
-                <Label htmlFor="category">Categoria</Label>
+                <Label htmlFor="category">{t('category')}</Label>
                 <Input
                   id="category"
                   value={newGoal.category}
                   onChange={(e) => setNewGoal({...newGoal, category: e.target.value})}
-                  placeholder="Ex: Carreira, Saúde, Pessoal..."
+                  placeholder={t('categoryPlaceholder')}
                 />
               </div>
               <div>
-                <Label htmlFor="priority">Prioridade</Label>
+                <Label htmlFor="priority">{t('priority')}</Label>
                 <Select value={newGoal.priority} onValueChange={(value: 'low' | 'medium' | 'high') => setNewGoal({...newGoal, priority: value})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="low">{t('low')}</SelectItem>
+                    <SelectItem value="medium">{t('medium')}</SelectItem>
+                    <SelectItem value="high">{t('high')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="targetDate">Data Alvo</Label>
+                <Label htmlFor="targetDate">{t('targetDate')}</Label>
                 <Input
                   id="targetDate"
                   type="date"
@@ -257,7 +228,7 @@ const ActionPlan: React.FC = () => {
                 />
               </div>
               <Button onClick={handleSaveGoal} className="w-full bg-pink-500 hover:bg-pink-600">
-                {editingGoal ? 'Atualizar' : 'Criar'} Objetivo
+                {editingGoal ? t('update') : t('create')} {t('goal')}
               </Button>
             </div>
           </DialogContent>
@@ -269,8 +240,9 @@ const ActionPlan: React.FC = () => {
           variant={selectedCategory === '' ? 'default' : 'outline'}
           onClick={() => setSelectedCategory('')}
           className={selectedCategory === '' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+          size="sm"
         >
-          Todas
+          {t('all')}
         </Button>
         {categories.map(category => (
           <Button
@@ -278,30 +250,31 @@ const ActionPlan: React.FC = () => {
             variant={selectedCategory === category ? 'default' : 'outline'}
             onClick={() => setSelectedCategory(category)}
             className={selectedCategory === category ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+            size="sm"
           >
             {category}
           </Button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {filteredGoals.map((goal) => (
           <Card key={goal.id} className="border-pink-200">
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <CardTitle className="text-pink-900 text-lg">{goal.title}</CardTitle>
-                  <div className="flex gap-2 mt-2">
-                    <Badge className={getPriorityColor(goal.priority)}>
-                      {goal.priority === 'high' ? 'Alta' : goal.priority === 'medium' ? 'Média' : 'Baixa'}
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-pink-900 text-base sm:text-lg break-words">{goal.title}</CardTitle>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    <Badge className={getPriorityColor(goal.priority)} variant="secondary">
+                      {goal.priority === 'high' ? t('high') : goal.priority === 'medium' ? t('medium') : t('low')}
                     </Badge>
-                    <Badge className={getStatusColor(goal.status)}>
-                      {goal.status === 'completed' ? 'Concluído' : 
-                       goal.status === 'in-progress' ? 'Em progresso' : 'Não iniciado'}
+                    <Badge className={getStatusColor(goal.status)} variant="secondary">
+                      {goal.status === 'completed' ? t('completed') : 
+                       goal.status === 'in-progress' ? t('inProgress') : t('notStarted')}
                     </Badge>
                   </div>
                 </div>
-                <div className="flex space-x-1">
+                <div className="flex space-x-1 shrink-0">
                   <Button
                     size="sm"
                     variant="outline"
@@ -323,11 +296,11 @@ const ActionPlan: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-pink-600 text-sm">{goal.description}</p>
+                <p className="text-pink-600 text-sm break-words">{goal.description}</p>
                 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-pink-700">Progresso</span>
+                    <span className="text-sm text-pink-700">{t('progress')}</span>
                     <span className="text-sm font-semibold text-pink-900">
                       {Math.round(goal.progress)}%
                     </span>
@@ -337,14 +310,14 @@ const ActionPlan: React.FC = () => {
 
                 {goal.targetDate && (
                   <div className="flex items-center text-sm text-pink-600">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Meta: {new Date(goal.targetDate).toLocaleDateString()}
+                    <Clock className="h-4 w-4 mr-2 shrink-0" />
+                    <span className="break-words">{t('target')}: {new Date(goal.targetDate).toLocaleDateString()}</span>
                   </div>
                 )}
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-pink-700">Tarefas</span>
+                    <span className="text-sm font-semibold text-pink-700">{t('tasks')}</span>
                     <Button
                       size="sm"
                       variant="outline"
@@ -365,13 +338,13 @@ const ActionPlan: React.FC = () => {
                           checked={task.completed}
                           onCheckedChange={() => handleToggleTask(goal.id, task.id)}
                         />
-                        <span className={`text-sm flex-1 ${task.completed ? 'line-through text-pink-400' : 'text-pink-700'}`}>
+                        <span className={`text-sm flex-1 break-words ${task.completed ? 'line-through text-pink-400' : 'text-pink-700'}`}>
                           {task.title}
                         </span>
                       </div>
                     ))}
                     {goal.tasks.length === 0 && (
-                      <p className="text-pink-400 text-sm">Nenhuma tarefa adicionada</p>
+                      <p className="text-pink-400 text-sm">{t('noTasksAdded')}</p>
                     )}
                   </div>
                 </div>
@@ -382,22 +355,22 @@ const ActionPlan: React.FC = () => {
       </div>
 
       <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-pink-900">Adicionar Tarefa</DialogTitle>
+            <DialogTitle className="text-pink-900">{t('addTask')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="task">Nova Tarefa</Label>
+              <Label htmlFor="task">{t('newTask')}</Label>
               <Input
                 id="task"
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Digite a tarefa..."
+                placeholder={t('enterTask')}
               />
             </div>
             <Button onClick={handleAddTask} className="w-full bg-pink-500 hover:bg-pink-600">
-              Adicionar Tarefa
+              {t('addTask')}
             </Button>
           </div>
         </DialogContent>
@@ -407,7 +380,7 @@ const ActionPlan: React.FC = () => {
         <Card>
           <CardContent className="text-center py-8">
             <Flag className="h-12 w-12 text-pink-300 mx-auto mb-4" />
-            <p className="text-pink-600">Nenhum objetivo criado ainda</p>
+            <p className="text-pink-600">{t('noGoalsCreated')}</p>
           </CardContent>
         </Card>
       )}

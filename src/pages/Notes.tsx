@@ -8,6 +8,7 @@ import { FileText, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Note {
   id: string;
@@ -19,24 +20,8 @@ interface Note {
 }
 
 const Notes: React.FC = () => {
-  const [notes, setNotes] = useState<Note[]>([
-    {
-      id: '1',
-      title: 'Ideias para o projeto',
-      content: 'Implementar sistema de notificações\nMelhorar interface do usuário\nAdicionar modo escuro',
-      category: 'Trabalho',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    },
-    {
-      id: '2',
-      title: 'Lista de compras',
-      content: 'Frutas\nVerduras\nProdutos de limpeza\nCafé',
-      category: 'Pessoal',
-      createdAt: new Date('2024-01-02'),
-      updatedAt: new Date('2024-01-02')
-    }
-  ]);
+  const { t } = useLanguage();
+  const [notes, setNotes] = useState<Note[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,57 +80,57 @@ const Notes: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <FileText className="h-8 w-8 text-pink-500" />
-          <h1 className="text-3xl font-bold text-pink-900">Notas</h1>
+          <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-pink-900">{t('notes')}</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-pink-500 hover:bg-pink-600">
+            <Button className="bg-pink-500 hover:bg-pink-600 w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Nova Nota
+              {t('newNote')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="w-[95vw] max-w-md">
             <DialogHeader>
               <DialogTitle className="text-pink-900">
-                {editingNote ? 'Editar Nota' : 'Nova Nota'}
+                {editingNote ? t('editNote') : t('newNote')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">{t('title')}</Label>
                 <Input
                   id="title"
                   value={newNote.title}
                   onChange={(e) => setNewNote({...newNote, title: e.target.value})}
-                  placeholder="Título da nota"
+                  placeholder={t('noteTitlePlaceholder')}
                 />
               </div>
               <div>
-                <Label htmlFor="category">Categoria</Label>
+                <Label htmlFor="category">{t('category')}</Label>
                 <Input
                   id="category"
                   value={newNote.category}
                   onChange={(e) => setNewNote({...newNote, category: e.target.value})}
-                  placeholder="Ex: Trabalho, Pessoal..."
+                  placeholder={t('categoryPlaceholder')}
                 />
               </div>
               <div>
-                <Label htmlFor="content">Conteúdo</Label>
+                <Label htmlFor="content">{t('description')}</Label>
                 <Textarea
                   id="content"
                   value={newNote.content}
                   onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                  placeholder="Escreva sua nota aqui..."
+                  placeholder={t('noteContentPlaceholder')}
                   rows={6}
                 />
               </div>
               <Button onClick={handleSaveNote} className="w-full bg-pink-500 hover:bg-pink-600">
-                {editingNote ? 'Atualizar' : 'Criar'} Nota
+                {editingNote ? t('update') : t('create')} {t('newNote')}
               </Button>
             </div>
           </DialogContent>
@@ -156,7 +141,7 @@ const Notes: React.FC = () => {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-400 h-4 w-4" />
           <Input
-            placeholder="Buscar notas..."
+            placeholder={t('searchNotes')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 border-pink-200 focus:border-pink-400"
@@ -167,8 +152,9 @@ const Notes: React.FC = () => {
             variant={selectedCategory === '' ? 'default' : 'outline'}
             onClick={() => setSelectedCategory('')}
             className={selectedCategory === '' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+            size="sm"
           >
-            Todas
+            {t('all')}
           </Button>
           {categories.map(category => (
             <Button
@@ -176,6 +162,7 @@ const Notes: React.FC = () => {
               variant={selectedCategory === category ? 'default' : 'outline'}
               onClick={() => setSelectedCategory(category)}
               className={selectedCategory === category ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+              size="sm"
             >
               {category}
             </Button>
@@ -183,20 +170,20 @@ const Notes: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredNotes.map((note) => (
           <Card key={note.id} className="border-pink-200 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <CardTitle className="text-pink-900 text-lg">{note.title}</CardTitle>
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-pink-900 text-base sm:text-lg break-words">{note.title}</CardTitle>
                   {note.category && (
                     <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
                       {note.category}
                     </Badge>
                   )}
                 </div>
-                <div className="flex space-x-1">
+                <div className="flex space-x-1 shrink-0">
                   <Button
                     size="sm"
                     variant="outline"
@@ -217,11 +204,11 @@ const Notes: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-pink-600 text-sm whitespace-pre-wrap line-clamp-4">
+              <p className="text-pink-600 text-sm whitespace-pre-wrap line-clamp-4 break-words">
                 {note.content}
               </p>
               <p className="text-pink-400 text-xs mt-3">
-                Atualizada: {note.updatedAt.toLocaleDateString()}
+                {t('updated')}: {note.updatedAt.toLocaleDateString()}
               </p>
             </CardContent>
           </Card>
@@ -233,7 +220,7 @@ const Notes: React.FC = () => {
           <CardContent className="text-center py-8">
             <FileText className="h-12 w-12 text-pink-300 mx-auto mb-4" />
             <p className="text-pink-600">
-              {searchTerm || selectedCategory ? 'Nenhuma nota encontrada' : 'Nenhuma nota criada ainda'}
+              {searchTerm || selectedCategory ? t('noNotesFound') : t('noNotesCreated')}
             </p>
           </CardContent>
         </Card>
