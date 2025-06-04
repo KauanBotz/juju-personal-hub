@@ -10,8 +10,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
+  const [user, setUser] = useState<{ username: string } | null>(() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const hashedPassword =
     '75b117e8148faca2e96f13ffa182ef13280b6704297c1b22809738f1067205b3';
@@ -29,6 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (username === 'julia.pena' && hash === hashedPassword) {
       setIsAuthenticated(true);
       setUser({ username });
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('user', JSON.stringify({ username }));
       return true;
     }
     return false;
@@ -37,6 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user');
   };
 
   return (

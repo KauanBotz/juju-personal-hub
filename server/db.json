@@ -1,3 +1,9 @@
 {
-    "items": []
-}
+    "notes": [],
+    "habits": [],
+    "events": [],
+    "pages": [],
+    "books": [],
+    "settings": { "profile": {}, "notifications": {} },
+    "home": { "pendingTasks": 0, "habitsToday": 0, "appointments": 0 }
+  }

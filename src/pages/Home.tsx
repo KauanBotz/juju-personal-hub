@@ -1,12 +1,26 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, FileText, Target, CheckSquare, BookOpen, NotebookPen } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+const API_BASE = 'http://localhost:3000';
+
 const Home: React.FC = () => {
   const { t } = useLanguage();
+
+  const [summary, setSummary] = useState({ pendingTasks: 0, habitsToday: 0, appointments: 0 });
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`${API_BASE}/home`);
+      if (res.ok) {
+        const data = await res.json();
+        setSummary(data);
+      }
+    };
+    load();
+  }, []);
 
   const quickAccess = [
     { path: '/calendar', icon: Calendar, title: t('calendar'), description: t('manageAppointments') },
@@ -58,15 +72,15 @@ const Home: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-pink-700">0</p>
+              <p className="text-xl sm:text-2xl font-bold text-pink-700">{summary.pendingTasks}</p>
               <p className="text-pink-600 text-sm sm:text-base">{t('pendingTasks')}</p>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-pink-700">0</p>
+              <p className="text-xl sm:text-2xl font-bold text-pink-700">{summary.habitsToday}</p>
               <p className="text-pink-600 text-sm sm:text-base">{t('habitsToday')}</p>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-pink-700">0</p>
+              <p className="text-xl sm:text-2xl font-bold text-pink-700">{summary.appointments}</p>
               <p className="text-pink-600 text-sm sm:text-base">{t('appointments')}</p>
             </div>
           </div>

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const API_BASE = 'http://localhost:3000';
 
 interface NotebookPage {
   id: string;
@@ -34,6 +35,23 @@ const Notebook: React.FC = () => {
     tags: ''
   });
 
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`${API_BASE}/pages`);
+      if (res.ok) {
+        const data = await res.json();
+        setPages(
+          data.map((p: any) => ({
+            ...p,
+            createdAt: new Date(p.createdAt),
+            updatedAt: new Date(p.updatedAt),
+          }))
+        );
+      }
+    };
+    load();
+  }, []);
+
   const allTags = Array.from(new Set(pages.flatMap(page => page.tags))).sort();
   const categories = Array.from(new Set(pages.map(page => page.category))).filter(Boolean);
 
@@ -53,18 +71,25 @@ const Notebook: React.FC = () => {
     const tags = newPage.tags.split(',').map(tag => tag.trim()).filter(Boolean);
 
     if (editingPage) {
-      setPages(pages.map(page => 
-        page.id === editingPage.id 
-          ? { 
-              ...page, 
-              title: newPage.title,
-              content: newPage.content,
-              category: newPage.category,
-              tags,
-              updatedAt: new Date() 
-            }
-          : page
-      ));
+      const updated = {
+        ...editingPage,
+        title: newPage.title,
+        content: newPage.content,
+        category: newPage.category,
+        tags,
+        updatedAt: new Date(),
+      };
+      fetch(`${API_BASE}/pages/${editingPage.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...updated,
+          createdAt: updated.createdAt.toISOString(),
+          updatedAt: updated.updatedAt.toISOString(),
+        }),
+      }).then(res => res.json()).then(() => {
+        setPages(pages.map(page => page.id === editingPage.id ? updated : page));
+      });
     } else {
       const page: NotebookPage = {
         id: Date.now().toString(),
@@ -73,9 +98,21 @@ const Notebook: React.FC = () => {
         category: newPage.category,
         tags,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      setPages([...pages, page]);
+      fetch(`${API_BASE}/pages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...page,
+          createdAt: page.createdAt.toISOString(),
+          updatedAt: page.updatedAt.toISOString(),
+        }),
+      }).then(res => res.json()).then(created => {
+        created.createdAt = new Date(created.createdAt);
+        created.updatedAt = new Date(created.updatedAt);
+        setPages([...pages, created]);
+      });
     }
 
     setNewPage({ title: '', content: '', category: '', tags: '' });
@@ -95,27 +132,28 @@ const Notebook: React.FC = () => {
   };
 
   const handleDeletePage = (pageId: string) => {
-    setPages(pages.filter(page => page.id !== pageId));
+    fetch(`${API_BASE}/pages/${pageId}`, { method: 'DELETE' })
+      .then(res => res.ok && setPages(pages.filter(page => page.id !== pageId)));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <NotebookPen className="h-8 w-8 text-pink-500" />
-          <h1 className="text-3xl font-bold text-pink-900">Caderno</h1>
+          <NotebookPen className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-primary">Caderno</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-pink-500 hover:bg-pink-600">
+            <Button className="bg-primary hover:bg-primary">
               <Plus className="h-4 w-4 mr-2" />
               Nova Página
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-pink-900">
+              <DialogTitle className="text-primary">
                 {editingPage ? 'Editar Página' : 'Nova Página'}
               </DialogTitle>
             </DialogHeader>
@@ -158,7 +196,7 @@ const Notebook: React.FC = () => {
                   className="font-mono"
                 />
               </div>
-              <Button onClick={handleSavePage} className="w-full bg-pink-500 hover:bg-pink-600">
+              <Button onClick={handleSavePage} className="w-full bg-primary hover:bg-primary">
                 {editingPage ? 'Atualizar' : 'Criar'} Página
               </Button>
             </div>
@@ -178,7 +216,7 @@ const Notebook: React.FC = () => {
             <Button
               variant={selectedTag === '' ? 'default' : 'outline'}
               onClick={() => setSelectedTag('')}
-              className={selectedTag === '' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+              className={selectedTag === '' ? 'bg-primary hover:bg-primary' : 'border-primary text-primary hover:bg-primary'}
             >
               Todas
             </Button>
@@ -187,7 +225,7 @@ const Notebook: React.FC = () => {
                 key={tag}
                 variant={selectedTag === tag ? 'default' : 'outline'}
                 onClick={() => setSelectedTag(tag)}
-                className={selectedTag === tag ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+                className={selectedTag === tag ? 'bg-primary hover:bg-primary' : 'border-primary text-primary hover:bg-primary'}
               >
                 #{tag}
               </Button>
@@ -196,13 +234,13 @@ const Notebook: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPages.map((page) => (
-              <Card key={page.id} className="border-pink-200 hover:shadow-lg transition-shadow">
+              <Card key={page.id} className="border-primary hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <CardTitle className="text-pink-900 text-lg">{page.title}</CardTitle>
+                      <CardTitle className="text-primary text-lg">{page.title}</CardTitle>
                       {page.category && (
-                        <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
+                        <Badge variant="secondary" className="mt-2 bg-primary text-primary">
                           {page.category}
                         </Badge>
                       )}
@@ -212,7 +250,7 @@ const Notebook: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEditPage(page)}
-                        className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                        className="border-primary text-primary hover:bg-primary"
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -229,21 +267,21 @@ const Notebook: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <p className="text-pink-600 text-sm line-clamp-4">
+                    <p className="text-primary text-sm line-clamp-4">
                       {page.content.substring(0, 150)}...
                     </p>
                     
                     {page.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {page.tags.map(tag => (
-                          <Badge key={tag} variant="outline" className="text-xs border-pink-300 text-pink-600">
+                          <Badge key={tag} variant="outline" className="text-xs border-primary text-primary">
                             #{tag}
                           </Badge>
                         ))}
                       </div>
                     )}
                     
-                    <p className="text-pink-400 text-xs">
+                    <p className="text-primary text-xs">
                       Atualizada: {page.updatedAt.toLocaleDateString()}
                     </p>
                   </div>
@@ -256,13 +294,13 @@ const Notebook: React.FC = () => {
         <TabsContent value="recent" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {recentPages.map((page) => (
-              <Card key={page.id} className="border-pink-200">
+              <Card key={page.id} className="border-primary">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <CardTitle className="text-pink-900 text-lg">{page.title}</CardTitle>
+                      <CardTitle className="text-primary text-lg">{page.title}</CardTitle>
                       {page.category && (
-                        <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
+                        <Badge variant="secondary" className="mt-2 bg-primary text-primary">
                           {page.category}
                         </Badge>
                       )}
@@ -271,17 +309,17 @@ const Notebook: React.FC = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => handleEditPage(page)}
-                      className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                      className="border-primary text-primary hover:bg-primary"
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-pink-600 text-sm line-clamp-3">
+                  <p className="text-primary text-sm line-clamp-3">
                     {page.content.substring(0, 200)}...
                   </p>
-                  <p className="text-pink-400 text-xs mt-3">
+                  <p className="text-primary text-xs mt-3">
                     {page.updatedAt.toLocaleDateString()} às {page.updatedAt.toLocaleTimeString()}
                   </p>
                 </CardContent>
@@ -292,25 +330,25 @@ const Notebook: React.FC = () => {
 
         <TabsContent value="search" className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary h-4 w-4" />
             <Input
               placeholder="Buscar em páginas, conteúdo e tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-pink-200 focus:border-pink-400"
+              className="pl-10 border-primary focus:border-primary"
             />
           </div>
 
           {searchTerm && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredPages.map((page) => (
-                <Card key={page.id} className="border-pink-200">
+                <Card key={page.id} className="border-primary">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <CardTitle className="text-pink-900 text-lg">{page.title}</CardTitle>
+                        <CardTitle className="text-primary text-lg">{page.title}</CardTitle>
                         {page.category && (
-                          <Badge variant="secondary" className="mt-2 bg-pink-100 text-pink-700">
+                          <Badge variant="secondary" className="mt-2 bg-primary text-primary">
                             {page.category}
                           </Badge>
                         )}
@@ -319,20 +357,20 @@ const Notebook: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEditPage(page)}
-                        className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                        className="border-primary text-primary hover:bg-primary"
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-pink-600 text-sm line-clamp-3">
+                    <p className="text-primary text-sm line-clamp-3">
                       {page.content.substring(0, 200)}...
                     </p>
                     {page.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {page.tags.map(tag => (
-                          <Badge key={tag} variant="outline" className="text-xs border-pink-300 text-pink-600">
+                          <Badge key={tag} variant="outline" className="text-xs border-primary text-primary">
                             #{tag}
                           </Badge>
                         ))}
@@ -347,8 +385,8 @@ const Notebook: React.FC = () => {
           {searchTerm && filteredPages.length === 0 && (
             <Card>
               <CardContent className="text-center py-8">
-                <Search className="h-12 w-12 text-pink-300 mx-auto mb-4" />
-                <p className="text-pink-600">Nenhuma página encontrada para "{searchTerm}"</p>
+                <Search className="h-12 w-12 text-primary mx-auto mb-4" />
+                <p className="text-primary">Nenhuma página encontrada para "{searchTerm}"</p>
               </CardContent>
             </Card>
           )}
@@ -358,8 +396,8 @@ const Notebook: React.FC = () => {
       {pages.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
-            <FileText className="h-12 w-12 text-pink-300 mx-auto mb-4" />
-            <p className="text-pink-600">Nenhuma página criada ainda</p>
+            <FileText className="h-12 w-12 text-primary mx-auto mb-4" />
+            <p className="text-primary">Nenhuma página criada ainda</p>
           </CardContent>
         </Card>
       )}

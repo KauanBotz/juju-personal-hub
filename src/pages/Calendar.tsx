@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+const API_BASE = 'http://localhost:3000';
 
 interface Event {
   id: string;
@@ -31,26 +32,43 @@ const Calendar: React.FC = () => {
     time: ''
   });
 
-  const eventsForSelectedDate = events.filter(event => 
+  const eventsForSelectedDate = events.filter(event =>
     event.date.toDateString() === selectedDate?.toDateString()
   );
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`${API_BASE}/events`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data.map((e: any) => ({ ...e, date: new Date(e.date) })));
+      }
+    };
+    load();
+  }, []);
 
   const handleSaveEvent = () => {
     if (!newEvent.title || !selectedDate) return;
 
     if (editingEvent) {
-      setEvents(events.map(event => 
-        event.id === editingEvent.id 
-          ? { ...event, ...newEvent, date: selectedDate }
-          : event
-      ));
+      const updated = { ...editingEvent, ...newEvent, date: selectedDate };
+      fetch(`${API_BASE}/events/${editingEvent.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...updated, date: selectedDate.toISOString() }),
+      }).then(res => res.json()).then(() => {
+        setEvents(events.map(e => e.id === editingEvent.id ? updated : e));
+      });
     } else {
-      const event: Event = {
-        id: Date.now().toString(),
-        ...newEvent,
-        date: selectedDate
-      };
-      setEvents([...events, event]);
+      const event: Event = { id: Date.now().toString(), ...newEvent, date: selectedDate };
+      fetch(`${API_BASE}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...event, date: selectedDate.toISOString() }),
+      }).then(res => res.json()).then(created => {
+        created.date = new Date(created.date);
+        setEvents([...events, created]);
+      });
     }
 
     setNewEvent({ title: '', description: '', time: '' });
@@ -69,27 +87,28 @@ const Calendar: React.FC = () => {
   };
 
   const handleDeleteEvent = (eventId: string) => {
-    setEvents(events.filter(event => event.id !== eventId));
+    fetch(`${API_BASE}/events/${eventId}`, { method: 'DELETE' })
+      .then(res => res.ok && setEvents(events.filter(event => event.id !== eventId)));
   };
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <CalendarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-pink-900">{t('calendar')}</h1>
+          <CalendarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">{t('calendar')}</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-pink-500 hover:bg-pink-600 w-full sm:w-auto">
+            <Button className="bg-primary hover:bg-primary w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               {t('newEvent')}
             </Button>
           </DialogTrigger>
           <DialogContent className="w-[95vw] max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-pink-900">
+              <DialogTitle className="text-primary">
                 {editingEvent ? t('editEvent') : t('newEvent')}
               </DialogTitle>
             </DialogHeader>
@@ -121,7 +140,7 @@ const Calendar: React.FC = () => {
                   placeholder={t('eventDescriptionPlaceholder')}
                 />
               </div>
-              <Button onClick={handleSaveEvent} className="w-full bg-pink-500 hover:bg-pink-600">
+              <Button onClick={handleSaveEvent} className="w-full bg-primary hover:bg-primary">
                 {editingEvent ? t('update') : t('create')} {t('newEvent')}
               </Button>
             </div>
@@ -132,39 +151,39 @@ const Calendar: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-pink-900">{t('calendar')}</CardTitle>
+            <CardTitle className="text-primary">{t('calendar')}</CardTitle>
           </CardHeader>
           <CardContent>
             <CalendarComponent
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md border border-pink-200 w-full"
+              className="rounded-md border border-primary w-full"
             />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-pink-900">
+            <CardTitle className="text-primary">
               {t('eventsFor')} {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : t('date')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {eventsForSelectedDate.length === 0 ? (
-              <p className="text-pink-600 text-center py-4">
+              <p className="text-primary text-center py-4">
                 {t('noEventsForDate')}
               </p>
             ) : (
               <div className="space-y-3">
                 {eventsForSelectedDate.map((event) => (
-                  <div key={event.id} className="p-3 border border-pink-200 rounded-lg">
+                  <div key={event.id} className="p-3 border border-primary rounded-lg">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-pink-900 break-words">{event.title}</h3>
-                        <p className="text-pink-600 text-sm">{event.time}</p>
+                        <h3 className="font-semibold text-primary break-words">{event.title}</h3>
+                        <p className="text-primary text-sm">{event.time}</p>
                         {event.description && (
-                          <p className="text-pink-700 text-sm mt-1 break-words">{event.description}</p>
+                          <p className="text-primary text-sm mt-1 break-words">{event.description}</p>
                         )}
                       </div>
                       <div className="flex space-x-2 shrink-0">
@@ -172,7 +191,7 @@ const Calendar: React.FC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleEditEvent(event)}
-                          className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                          className="border-primary text-primary hover:bg-primary"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -198,3 +217,5 @@ const Calendar: React.FC = () => {
 };
 
 export default Calendar;
+
+    

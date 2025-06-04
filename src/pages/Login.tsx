@@ -26,10 +26,10 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-pink-200 to-red-200">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-primary to-red-200">
       <Card className="w-full max-w-sm bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl">
         <CardHeader className="text-center mt-8">
-          <CardTitle className="text-3xl font-extrabold text-pink-600">
+          <CardTitle className="text-3xl font-extrabold text-primary">
             Seja bem-vinda Julia!
           </CardTitle>
         </CardHeader>
@@ -39,8 +39,8 @@ const Login: React.FC = () => {
               <Label htmlFor="username" className="text-gray-700">
                 Usuário
               </Label>
-              <div className="flex items-center border border-pink-300 rounded-lg mt-1 focus-within:ring-2 focus-within:ring-pink-400">
-                <span className="px-3 text-pink-400">
+              <div className="flex items-center border border-primary rounded-lg mt-1 focus-within:ring-2 focus-within:ring-primary">
+                <span className="px-3 text-primary">
                   <User size={20} />
                 </span>
                 <Input
@@ -57,8 +57,8 @@ const Login: React.FC = () => {
               <Label htmlFor="password" className="text-gray-700">
                 Senha
               </Label>
-              <div className="flex items-center border border-pink-300 rounded-lg mt-1 focus-within:ring-2 focus-within:ring-pink-400">
-                <span className="px-3 text-pink-400">
+              <div className="flex items-center border border-primary rounded-lg mt-1 focus-within:ring-2 focus-within:ring-primary">
+                <span className="px-3 text-primary">
                   <Lock size={20} />
                 </span>
                 <Input
@@ -76,12 +76,12 @@ const Login: React.FC = () => {
             )}
             <Button
               type="submit"
-              className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg py-2 transition duration-200"
+              className="w-full bg-primary hover:bg-primary text-white font-semibold rounded-lg py-2 transition duration-200"
             >
               Entrar
             </Button>
             <div className="text-center mt-4">
-            <Link to="/forgot-password" className="text-sm text-pink-600 hover:underline">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                 Esqueci minha senha
               </Link>
             </div>

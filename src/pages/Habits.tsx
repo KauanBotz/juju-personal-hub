@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 
+const API_BASE = 'http://localhost:3000';
+
 interface Habit {
   id: string;
   name: string;
@@ -16,7 +17,7 @@ interface Habit {
   target: number;
   frequency: 'daily' | 'weekly';
   completions: { [date: string]: number };
-  createdAt: Date;
+  createdAt: string;
 }
 
 const Habits: React.FC = () => {
@@ -30,6 +31,17 @@ const Habits: React.FC = () => {
     target: 1,
     frequency: 'daily' as 'daily' | 'weekly'
   });
+
+  useEffect(() => {
+    const loadHabits = async () => {
+      const res = await fetch(`${API_BASE}/habits`);
+      if (res.ok) {
+        const data = await res.json();
+        setHabits(data);
+      }
+    };
+    loadHabits();
+  }, []);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -56,13 +68,19 @@ const Habits: React.FC = () => {
       if (habit.id === habitId) {
         const currentCompletion = getTodayCompletion(habit);
         const newCompletion = Math.max(0, currentCompletion + increment);
-        return {
+        const updated = {
           ...habit,
           completions: {
             ...habit.completions,
             [today]: newCompletion
           }
         };
+        fetch(`${API_BASE}/habits/${habitId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        });
+        return updated;
       }
       return habit;
     }));
@@ -72,19 +90,21 @@ const Habits: React.FC = () => {
     if (!newHabit.name) return;
 
     if (editingHabit) {
-      setHabits(habits.map(habit => 
-        habit.id === editingHabit.id 
-          ? { ...habit, ...newHabit }
-          : habit
-      ));
+      fetch(`${API_BASE}/habits/${editingHabit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...editingHabit, ...newHabit }),
+      }).then(res => res.json()).then(updated => {
+        setHabits(habits.map(h => h.id === editingHabit.id ? updated : h));
+      });
     } else {
-      const habit: Habit = {
-        id: Date.now().toString(),
-        ...newHabit,
-        completions: {},
-        createdAt: new Date()
-      };
-      setHabits([...habits, habit]);
+      fetch(`${API_BASE}/habits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newHabit),
+      }).then(res => res.json()).then(created => {
+        setHabits([...habits, created]);
+      });
     }
 
     setNewHabit({ name: '', description: '', target: 1, frequency: 'daily' });
@@ -104,27 +124,28 @@ const Habits: React.FC = () => {
   };
 
   const handleDeleteHabit = (habitId: string) => {
-    setHabits(habits.filter(habit => habit.id !== habitId));
+    fetch(`${API_BASE}/habits/${habitId}`, { method: 'DELETE' })
+      .then(res => res.ok && setHabits(habits.filter(habit => habit.id !== habitId)));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <CheckSquare className="h-8 w-8 text-pink-500" />
-          <h1 className="text-3xl font-bold text-pink-900">Hábitos</h1>
+          <CheckSquare className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-primary">Hábitos</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-pink-500 hover:bg-pink-600">
+            <Button className="bg-primary hover:bg-primary">
               <Plus className="h-4 w-4 mr-2" />
               Novo Hábito
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-pink-900">
+              <DialogTitle className="text-primary">
                 {editingHabit ? 'Editar Hábito' : 'Novo Hábito'}
               </DialogTitle>
             </DialogHeader>
@@ -157,7 +178,7 @@ const Habits: React.FC = () => {
                   onChange={(e) => setNewHabit({...newHabit, target: parseInt(e.target.value) || 1})}
                 />
               </div>
-              <Button onClick={handleSaveHabit} className="w-full bg-pink-500 hover:bg-pink-600">
+              <Button onClick={handleSaveHabit} className="w-full bg-primary hover:bg-primary">
                 {editingHabit ? 'Atualizar' : 'Criar'} Hábito
               </Button>
             </div>
@@ -173,19 +194,19 @@ const Habits: React.FC = () => {
           const isCompleted = todayCompletion >= habit.target;
 
           return (
-            <Card key={habit.id} className="border-pink-200">
+            <Card key={habit.id} className="border-primary">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="text-pink-900 text-lg">{habit.name}</CardTitle>
-                    <p className="text-pink-600 text-sm">{habit.description}</p>
+                    <CardTitle className="text-primary text-lg">{habit.name}</CardTitle>
+                    <p className="text-primary text-sm">{habit.description}</p>
                   </div>
                   <div className="flex space-x-1">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleEditHabit(habit)}
-                      className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                      className="border-primary text-primary hover:bg-primary"
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
@@ -204,8 +225,8 @@ const Habits: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-pink-700">Hoje</span>
-                      <span className="text-sm font-semibold text-pink-900">
+                      <span className="text-sm text-primary">Hoje</span>
+                      <span className="text-sm font-semibold text-primary">
                         {todayCompletion}/{habit.target}
                       </span>
                     </div>
@@ -227,17 +248,17 @@ const Habits: React.FC = () => {
                       variant="outline"
                       onClick={() => updateHabitCompletion(habit.id, -1)}
                       disabled={todayCompletion === 0}
-                      className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                      className="border-primary text-primary hover:bg-primary"
                     >
                       -
                     </Button>
-                    <span className="text-lg font-semibold text-pink-900">
+                    <span className="text-lg font-semibold text-primary">
                       {todayCompletion}
                     </span>
                     <Button
                       size="sm"
                       onClick={() => updateHabitCompletion(habit.id, 1)}
-                      className="bg-pink-500 hover:bg-pink-600"
+                      className="bg-primary hover:bg-primary"
                     >
                       +
                     </Button>
@@ -245,11 +266,11 @@ const Habits: React.FC = () => {
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-pink-700 flex items-center">
+                      <span className="text-sm text-primary flex items-center">
                         <TrendingUp className="h-4 w-4 mr-1" />
                         Últimos 7 dias
                       </span>
-                      <span className="text-sm font-semibold text-pink-900">
+                      <span className="text-sm font-semibold text-primary">
                         {Math.round(weekProgress)}%
                       </span>
                     </div>
@@ -265,8 +286,8 @@ const Habits: React.FC = () => {
       {habits.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
-            <Target className="h-12 w-12 text-pink-300 mx-auto mb-4" />
-            <p className="text-pink-600">Nenhum hábito criado ainda</p>
+            <Target className="h-12 w-12 text-primary mx-auto mb-4" />
+            <p className="text-primary">Nenhum hábito criado ainda</p>
           </CardContent>
         </Card>
       )}

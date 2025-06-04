@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+
+const API_BASE = 'http://localhost:3000';
 
 interface Book {
   id: string;
@@ -40,6 +41,17 @@ const ReadingList: React.FC = () => {
     notes: ''
   });
 
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`${API_BASE}/books`);
+      if (res.ok) {
+        const data = await res.json();
+        setBooks(data.map((b: any) => ({ ...b, addedAt: new Date(b.addedAt) })));
+      }
+    };
+    load();
+  }, []);
+
   const genres = Array.from(new Set(books.map(book => book.genre))).filter(Boolean);
 
   const filteredBooks = books.filter(book => 
@@ -50,11 +62,14 @@ const ReadingList: React.FC = () => {
     if (!newBook.title || !newBook.author) return;
 
     if (editingBook) {
-      setBooks(books.map(book => 
-        book.id === editingBook.id 
-          ? { ...book, ...newBook }
-          : book
-      ));
+      const updated = { ...editingBook, ...newBook };
+      fetch(`${API_BASE}/books/${editingBook.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).then(res => res.json()).then(() => {
+        setBooks(books.map(book => book.id === editingBook.id ? updated : book));
+      });
     } else {
       const book: Book = {
         id: Date.now().toString(),
@@ -64,7 +79,14 @@ const ReadingList: React.FC = () => {
         currentPage: 0,
         addedAt: new Date()
       };
-      setBooks([...books, book]);
+      fetch(`${API_BASE}/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...book, addedAt: book.addedAt.toISOString() }),
+      }).then(res => res.json()).then(created => {
+        created.addedAt = new Date(created.addedAt);
+        setBooks([...books, created]);
+      });
     }
 
     setNewBook({ title: '', author: '', genre: '', pages: 0, notes: '' });
@@ -85,39 +107,62 @@ const ReadingList: React.FC = () => {
   };
 
   const handleDeleteBook = (bookId: string) => {
-    setBooks(books.filter(book => book.id !== bookId));
+    fetch(`${API_BASE}/books/${bookId}`, { method: 'DELETE' })
+      .then(res => res.ok && setBooks(books.filter(book => book.id !== bookId)));
   };
 
   const handleStatusChange = (bookId: string, status: 'to-read' | 'reading' | 'completed') => {
     setBooks(books.map(book => {
       if (book.id === bookId) {
         const updates: Partial<Book> = { status };
-        
+
         if (status === 'reading' && book.status === 'to-read') {
           updates.startDate = new Date().toISOString().split('T')[0];
         } else if (status === 'completed') {
           updates.endDate = new Date().toISOString().split('T')[0];
           updates.currentPage = book.pages;
         }
-        
-        return { ...book, ...updates };
+
+        const updated = { ...book, ...updates };
+        fetch(`${API_BASE}/books/${bookId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        });
+        return updated;
       }
       return book;
     }));
   };
 
   const handleProgressUpdate = (bookId: string, currentPage: number) => {
-    setBooks(books.map(book => 
-      book.id === bookId 
-        ? { ...book, currentPage: Math.min(currentPage, book.pages) }
-        : book
-    ));
+    setBooks(books.map(book => {
+      if (book.id === bookId) {
+        const updated = { ...book, currentPage: Math.min(currentPage, book.pages) };
+        fetch(`${API_BASE}/books/${bookId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        });
+        return updated;
+      }
+      return book;
+    }));
   };
 
   const handleRatingChange = (bookId: string, rating: number) => {
-    setBooks(books.map(book => 
-      book.id === bookId ? { ...book, rating } : book
-    ));
+    setBooks(books.map(book => {
+      if (book.id === bookId) {
+        const updated = { ...book, rating };
+        fetch(`${API_BASE}/books/${bookId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        });
+        return updated;
+      }
+      return book;
+    }));
   };
 
   const getStatusColor = (status: string) => {
@@ -142,20 +187,20 @@ const ReadingList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <BookOpen className="h-8 w-8 text-pink-500" />
-          <h1 className="text-3xl font-bold text-pink-900">Lista de Leitura</h1>
+          <BookOpen className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-primary">Lista de Leitura</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-pink-500 hover:bg-pink-600">
+            <Button className="bg-primary hover:bg-primary">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Livro
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-pink-900">
+              <DialogTitle className="text-primary">
                 {editingBook ? 'Editar Livro' : 'Adicionar Livro'}
               </DialogTitle>
             </DialogHeader>
@@ -208,7 +253,7 @@ const ReadingList: React.FC = () => {
                   rows={3}
                 />
               </div>
-              <Button onClick={handleSaveBook} className="w-full bg-pink-500 hover:bg-pink-600">
+              <Button onClick={handleSaveBook} className="w-full bg-primary hover:bg-primary">
                 {editingBook ? 'Atualizar' : 'Adicionar'} Livro
               </Button>
             </div>
@@ -220,28 +265,28 @@ const ReadingList: React.FC = () => {
         <Button
           variant={selectedStatus === '' ? 'default' : 'outline'}
           onClick={() => setSelectedStatus('')}
-          className={selectedStatus === '' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+          className={selectedStatus === '' ? 'bg-primary hover:bg-primary' : 'border-primary text-primary hover:bg-primary'}
         >
           Todos
         </Button>
         <Button
           variant={selectedStatus === 'to-read' ? 'default' : 'outline'}
           onClick={() => setSelectedStatus('to-read')}
-          className={selectedStatus === 'to-read' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+          className={selectedStatus === 'to-read' ? 'bg-primary hover:bg-primary' : 'border-primary text-primary hover:bg-primary'}
         >
           Para ler
         </Button>
         <Button
           variant={selectedStatus === 'reading' ? 'default' : 'outline'}
           onClick={() => setSelectedStatus('reading')}
-          className={selectedStatus === 'reading' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+          className={selectedStatus === 'reading' ? 'bg-primary hover:bg-primary' : 'border-primary text-primary hover:bg-primary'}
         >
           Lendo
         </Button>
         <Button
           variant={selectedStatus === 'completed' ? 'default' : 'outline'}
           onClick={() => setSelectedStatus('completed')}
-          className={selectedStatus === 'completed' ? 'bg-pink-500 hover:bg-pink-600' : 'border-pink-300 text-pink-700 hover:bg-pink-100'}
+          className={selectedStatus === 'completed' ? 'bg-primary hover:bg-primary' : 'border-primary text-primary hover:bg-primary'}
         >
           Concluídos
         </Button>
@@ -252,18 +297,18 @@ const ReadingList: React.FC = () => {
           const progress = book.pages > 0 ? (book.currentPage / book.pages) * 100 : 0;
           
           return (
-            <Card key={book.id} className="border-pink-200">
+            <Card key={book.id} className="border-primary">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="text-pink-900 text-lg">{book.title}</CardTitle>
-                    <p className="text-pink-600 text-sm">{book.author}</p>
+                    <CardTitle className="text-primary text-lg">{book.title}</CardTitle>
+                    <p className="text-primary text-sm">{book.author}</p>
                     <div className="flex gap-2 mt-2">
                       <Badge className={getStatusColor(book.status)}>
                         {getStatusText(book.status)}
                       </Badge>
                       {book.genre && (
-                        <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                        <Badge variant="secondary" className="bg-primary text-primary">
                           {book.genre}
                         </Badge>
                       )}
@@ -274,7 +319,7 @@ const ReadingList: React.FC = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => handleEditBook(book)}
-                      className="border-pink-300 text-pink-700 hover:bg-pink-100"
+                      className="border-primary text-primary hover:bg-primary"
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
@@ -314,7 +359,7 @@ const ReadingList: React.FC = () => {
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <Label>Progresso</Label>
-                        <span className="text-sm text-pink-700">
+                        <span className="text-sm text-primary">
                           {book.currentPage}/{book.pages}
                         </span>
                       </div>
@@ -356,14 +401,14 @@ const ReadingList: React.FC = () => {
                   )}
 
                   {book.startDate && (
-                    <div className="flex items-center text-sm text-pink-600">
+                    <div className="flex items-center text-sm text-primary">
                       <Clock className="h-4 w-4 mr-2" />
                       Iniciado: {new Date(book.startDate).toLocaleDateString()}
                     </div>
                   )}
 
                   {book.endDate && (
-                    <div className="flex items-center text-sm text-pink-600">
+                    <div className="flex items-center text-sm text-primary">
                       <Clock className="h-4 w-4 mr-2" />
                       Concluído: {new Date(book.endDate).toLocaleDateString()}
                     </div>
@@ -372,7 +417,7 @@ const ReadingList: React.FC = () => {
                   {book.notes && (
                     <div>
                       <Label>Notas</Label>
-                      <p className="text-sm text-pink-600 mt-1">{book.notes}</p>
+                      <p className="text-sm text-primary mt-1">{book.notes}</p>
                     </div>
                   )}
                 </div>
@@ -385,8 +430,8 @@ const ReadingList: React.FC = () => {
       {filteredBooks.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
-            <BookOpen className="h-12 w-12 text-pink-300 mx-auto mb-4" />
-            <p className="text-pink-600">
+            <BookOpen className="h-12 w-12 text-primary mx-auto mb-4" />
+            <p className="text-primary">
               {selectedStatus ? 'Nenhum livro encontrado nesta categoria' : 'Nenhum livro adicionado ainda'}
             </p>
           </CardContent>
