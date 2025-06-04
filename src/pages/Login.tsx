@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +14,11 @@ const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (login(username, password)) {
+    if (await login(username, password)) {
       navigate('/home');
     } else {
       setError('Credenciais inválidas');
@@ -81,9 +81,9 @@ const Login: React.FC = () => {
               Entrar
             </Button>
             <div className="text-center mt-4">
-              <a href="#" className="text-sm text-pink-600 hover:underline">
+            <Link to="/forgot-password" className="text-sm text-pink-600 hover:underline">
                 Esqueci minha senha
-              </a>
+              </Link>
             </div>
           </form>
         </CardContent>

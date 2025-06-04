@@ -1,10 +1,9 @@
-
 import React, { createContext, useContext, useState } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: { username: string } | null;
-  login: (username: string, password: string) => boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -14,8 +13,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<{ username: string } | null>(null);
 
-  const login = (username: string, password: string): boolean => {
-    if (username === 'julia.pena' && password === 'juliapena123') {
+  const hashedPassword =
+    '75b117e8148faca2e96f13ffa182ef13280b6704297c1b22809738f1067205b3';
+
+  const hashPassword = async (pwd: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pwd);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const login = async (username: string, password: string): Promise<boolean> => {
+    const hash = await hashPassword(password);
+    if (username === 'julia.pena' && hash === hashedPassword) {
       setIsAuthenticated(true);
       setUser({ username });
       return true;

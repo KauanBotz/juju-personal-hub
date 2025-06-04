@@ -8,11 +8,13 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings as SettingsIcon, User, Bell, Palette, Download, Upload, Trash2 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAccentColor } from '@/contexts/AccentColorContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Settings: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const { color, setColor } = useAccentColor();
   const { language, setLanguage } = useLanguage();
   const [notifications, setNotifications] = useState({
     email: true,
@@ -169,10 +171,22 @@ const Settings: React.FC = () => {
                   Personalize as cores do sistema
                 </p>
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="w-12 h-12 bg-pink-500 rounded-lg border-2 border-pink-700 cursor-pointer"></div>
-                  <div className="w-12 h-12 bg-purple-500 rounded-lg border cursor-pointer"></div>
-                  <div className="w-12 h-12 bg-blue-500 rounded-lg border cursor-pointer"></div>
-                  <div className="w-12 h-12 bg-green-500 rounded-lg border cursor-pointer"></div>
+                <div
+                    className={`w-12 h-12 bg-pink-500 rounded-lg border cursor-pointer ${color === 'pink' ? 'ring-2 ring-pink-700' : ''}`}
+                    onClick={() => setColor('pink')}
+                  ></div>
+                  <div
+                    className={`w-12 h-12 bg-purple-500 rounded-lg border cursor-pointer ${color === 'purple' ? 'ring-2 ring-purple-700' : ''}`}
+                    onClick={() => setColor('purple')}
+                  ></div>
+                  <div
+                    className={`w-12 h-12 bg-blue-500 rounded-lg border cursor-pointer ${color === 'blue' ? 'ring-2 ring-blue-700' : ''}`}
+                    onClick={() => setColor('blue')}
+                  ></div>
+                  <div
+                    className={`w-12 h-12 bg-green-500 rounded-lg border cursor-pointer ${color === 'green' ? 'ring-2 ring-green-700' : ''}`}
+                    onClick={() => setColor('green')}
+                  ></div>
                 </div>
               </div>
             </CardContent>

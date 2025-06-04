@@ -34,15 +34,15 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-20 bg-white shadow-lg flex flex-col justify-between">
+    <aside className="w-20 bg-sidebar text-sidebar-foreground shadow-lg flex flex-col justify-between">
       {/* Avatar + collapse hint */}
       <div className="flex flex-col items-center py-6 space-y-4">
-        <Avatar className="ring-2 ring-pink-300">
-          <AvatarFallback className="bg-pink-200 text-pink-800">
+        <Avatar className="ring-2 ring-sidebar-ring">
+          <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground">
             <User className="h-6 w-6" />
           </AvatarFallback>
         </Avatar>
-        <p className="text-xs text-pink-600 truncate w-full text-center">
+        <p className="text-xs text-sidebar-foreground truncate w-full text-center">
           {'Júlia Pena'}
         </p>
       </div>
@@ -59,8 +59,8 @@ export const Sidebar: React.FC = () => {
               className={`
                 flex items-center justify-center w-12 h-12 rounded-xl transition-colors duration-200
                 ${isActive 
-                  ? 'bg-pink-100 text-pink-600 shadow-md' 
-                  : 'text-pink-400 hover:bg-pink-50 hover:text-pink-600'}
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-md' 
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}
               `}
               title={item.label}
             >
@@ -75,7 +75,7 @@ export const Sidebar: React.FC = () => {
         <Button
           onClick={logout}
           variant="ghost"
-          className="p-2 rounded-full text-pink-400 hover:bg-pink-50 hover:text-pink-600"
+          className="p-2 rounded-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           title={t('logout')}
         >
           <LogOut className="h-6 w-6" />

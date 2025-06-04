@@ -16,6 +16,7 @@ import { MainLayout } from '@/components/Layout/MainLayout';
 
 // Pages
 import Login from '@/pages/Login';
+import ForgotPassword from '@/pages/ForgotPassword';
 import Home from '@/pages/Home';
 import Calendar from '@/pages/Calendar';
 import Notes from '@/pages/Notes';
@@ -25,6 +26,7 @@ import ReadingList from '@/pages/ReadingList';
 import Notebook from '@/pages/Notebook';
 import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
+import { AccentColorProvider } from './contexts/AccentColorContext';
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,12 @@ const AppRoutes = () => {
       <Route path="/login" element={
         <PublicRoute>
           <Login />
+        </PublicRoute>
+      } />
+      
+      <Route path="/forgot-password" element={
+        <PublicRoute>
+          <ForgotPassword />
         </PublicRoute>
       } />
       
@@ -117,21 +125,24 @@ const AppRoutes = () => {
   );
 };
 
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </AuthProvider>
-        </LanguageProvider>
+        <AccentColorProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </AccentColorProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
