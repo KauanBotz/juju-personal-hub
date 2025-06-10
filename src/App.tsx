@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,7 +11,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 // Components
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { ModernLayout } from '@/components/Layout/ModernLayout';
 
 // Pages
 import Login from '@/pages/Login';
@@ -36,7 +35,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -50,7 +49,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -77,65 +76,65 @@ const AppRoutes = () => {
       
       <Route path="/home" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <Home />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/calendar" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <Calendar />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/notes" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <Notes />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/habits" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <Habits />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/action-plan" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <ActionPlan />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/reading-list" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <ReadingList />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/notebook" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <Notebook />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
       <Route path="/settings" element={
         <ProtectedRoute>
-          <MainLayout>
+          <ModernLayout>
             <Settings />
-          </MainLayout>
+          </ModernLayout>
         </ProtectedRoute>
       } />
       
