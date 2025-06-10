@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,127 +6,174 @@ import { Input } from '@/components/ui/input';
 import { CheckSquare, Plus, Edit, Trash2, Target, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-
-const API_BASE = 'http://localhost:3000';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface Habit {
   id: string;
-  name: string;
+  title: string;
   description: string;
-  target: number;
-  frequency: 'daily' | 'weekly';
-  completions: { [date: string]: number };
-  createdAt: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  streak: number;
+  status: 'active' | 'paused';
+  created_at: string;
 }
 
 const Habits: React.FC = () => {
-  const [habits, setHabits] = useState<Habit[]>([
-  ]);
+  const { t } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [newHabit, setNewHabit] = useState({
-    name: '',
+    title: '',
     description: '',
-    target: 1,
-    frequency: 'daily' as 'daily' | 'weekly'
+    frequency: 'daily' as 'daily' | 'weekly' | 'monthly'
   });
 
   useEffect(() => {
-    const loadHabits = async () => {
-      const res = await fetch(`${API_BASE}/habits`);
-      if (res.ok) {
-        const data = await res.json();
-        setHabits(data);
-      }
-    };
-    loadHabits();
-  }, []);
+    if (user) {
+      loadHabits();
+    }
+  }, [user]);
 
-  const today = new Date().toISOString().split('T')[0];
+  const loadHabits = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('habits')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const getTodayCompletion = (habit: Habit) => {
-    return habit.completions[today] || 0;
-  };
-
-  const getWeekProgress = (habit: Habit) => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      return date.toISOString().split('T')[0];
-    });
-
-    const completed = last7Days.filter(date => 
-      (habit.completions[date] || 0) >= habit.target
-    ).length;
-
-    return (completed / 7) * 100;
-  };
-
-  const updateHabitCompletion = (habitId: string, increment: number) => {
-    setHabits(habits.map(habit => {
-      if (habit.id === habitId) {
-        const currentCompletion = getTodayCompletion(habit);
-        const newCompletion = Math.max(0, currentCompletion + increment);
-        const updated = {
-          ...habit,
-          completions: {
-            ...habit.completions,
-            [today]: newCompletion
-          }
-        };
-        fetch(`${API_BASE}/habits/${habitId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated),
-        });
-        return updated;
-      }
-      return habit;
-    }));
-  };
-
-  const handleSaveHabit = () => {
-    if (!newHabit.name) return;
-
-    if (editingHabit) {
-      fetch(`${API_BASE}/habits/${editingHabit.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...editingHabit, ...newHabit }),
-      }).then(res => res.json()).then(updated => {
-        setHabits(habits.map(h => h.id === editingHabit.id ? updated : h));
-      });
-    } else {
-      fetch(`${API_BASE}/habits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newHabit),
-      }).then(res => res.json()).then(created => {
-        setHabits([...habits, created]);
+      if (error) throw error;
+      setHabits(data || []);
+    } catch (error) {
+      console.error('Error loading habits:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar hábitos",
+        variant: "destructive"
       });
     }
+  };
 
-    setNewHabit({ name: '', description: '', target: 1, frequency: 'daily' });
-    setEditingHabit(null);
-    setIsDialogOpen(false);
+  const handleSaveHabit = async () => {
+    if (!newHabit.title || !user) return;
+
+    try {
+      if (editingHabit) {
+        const { error } = await supabase
+          .from('habits')
+          .update({
+            title: newHabit.title,
+            description: newHabit.description,
+            frequency: newHabit.frequency
+          })
+          .eq('id', editingHabit.id);
+
+        if (error) throw error;
+
+        setHabits(habits.map(h => 
+          h.id === editingHabit.id 
+            ? { ...h, ...newHabit }
+            : h
+        ));
+      } else {
+        const { data, error } = await supabase
+          .from('habits')
+          .insert({
+            title: newHabit.title,
+            description: newHabit.description,
+            frequency: newHabit.frequency,
+            user_id: user.id
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setHabits([data, ...habits]);
+      }
+
+      setNewHabit({ title: '', description: '', frequency: 'daily' });
+      setEditingHabit(null);
+      setIsDialogOpen(false);
+
+      toast({
+        title: "Sucesso",
+        description: editingHabit ? "Hábito atualizado!" : "Hábito criado!"
+      });
+    } catch (error) {
+      console.error('Error saving habit:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar hábito",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditHabit = (habit: Habit) => {
     setEditingHabit(habit);
     setNewHabit({
-      name: habit.name,
+      title: habit.title,
       description: habit.description,
-      target: habit.target,
       frequency: habit.frequency
     });
     setIsDialogOpen(true);
   };
 
-  const handleDeleteHabit = (habitId: string) => {
-    fetch(`${API_BASE}/habits/${habitId}`, { method: 'DELETE' })
-      .then(res => res.ok && setHabits(habits.filter(habit => habit.id !== habitId)));
+  const handleDeleteHabit = async (habitId: string) => {
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', habitId);
+
+      if (error) throw error;
+      
+      setHabits(habits.filter(habit => habit.id !== habitId));
+      toast({
+        title: "Sucesso",
+        description: "Hábito excluído!"
+      });
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir hábito",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateStreak = async (habitId: string, increment: number) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    const newStreak = Math.max(0, habit.streak + increment);
+    
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .update({ streak: newStreak })
+        .eq('id', habitId);
+
+      if (error) throw error;
+
+      setHabits(habits.map(h => 
+        h.id === habitId ? { ...h, streak: newStreak } : h
+      ));
+    } catch (error) {
+      console.error('Error updating streak:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar sequência",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -133,53 +181,55 @@ const Habits: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <CheckSquare className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold text-primary">Hábitos</h1>
+          <h1 className="text-3xl font-bold text-primary">{t('habits')}</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Hábito
+              {t('newHabit')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="text-primary">
-                {editingHabit ? 'Editar Hábito' : 'Novo Hábito'}
+                {editingHabit ? t('editHabit') : t('newHabit')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Nome do Hábito</Label>
+                <Label htmlFor="name">{t('title')}</Label>
                 <Input
                   id="name"
-                  value={newHabit.name}
-                  onChange={(e) => setNewHabit({...newHabit, name: e.target.value})}
-                  placeholder="Ex: Beber água"
+                  value={newHabit.title}
+                  onChange={(e) => setNewHabit({...newHabit, title: e.target.value})}
+                  placeholder={t('habitTitlePlaceholder')}
                 />
               </div>
               <div>
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">{t('description')}</Label>
                 <Input
                   id="description"
                   value={newHabit.description}
                   onChange={(e) => setNewHabit({...newHabit, description: e.target.value})}
-                  placeholder="Descrição do hábito"
+                  placeholder={t('habitDescriptionPlaceholder')}
                 />
               </div>
               <div>
-                <Label htmlFor="target">Meta Diária</Label>
-                <Input
-                  id="target"
-                  type="number"
-                  min="1"
-                  value={newHabit.target}
-                  onChange={(e) => setNewHabit({...newHabit, target: parseInt(e.target.value) || 1})}
-                />
+                <Label htmlFor="frequency">{t('frequency')}</Label>
+                <select
+                  value={newHabit.frequency}
+                  onChange={(e) => setNewHabit({...newHabit, frequency: e.target.value as 'daily' | 'weekly' | 'monthly'})}
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                >
+                  <option value="daily">{t('daily')}</option>
+                  <option value="weekly">{t('weekly')}</option>
+                  <option value="monthly">{t('monthly')}</option>
+                </select>
               </div>
               <Button onClick={handleSaveHabit} className="w-full bg-primary hover:bg-primary">
-                {editingHabit ? 'Atualizar' : 'Criar'} Hábito
+                {editingHabit ? t('update') : t('create')} {t('habit')}
               </Button>
             </div>
           </DialogContent>
@@ -187,107 +237,90 @@ const Habits: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {habits.map((habit) => {
-          const todayCompletion = getTodayCompletion(habit);
-          const progressPercentage = (todayCompletion / habit.target) * 100;
-          const weekProgress = getWeekProgress(habit);
-          const isCompleted = todayCompletion >= habit.target;
-
-          return (
-            <Card key={habit.id} className="border-primary">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-primary text-lg">{habit.name}</CardTitle>
-                    <p className="text-primary text-sm">{habit.description}</p>
-                  </div>
-                  <div className="flex space-x-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditHabit(habit)}
-                      className="border-primary text-primary hover:bg-primary"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteHabit(habit.id)}
-                      className="border-red-300 text-red-700 hover:bg-red-100"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+        {habits.map((habit) => (
+          <Card key={habit.id} className="border-primary">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <CardTitle className="text-primary text-lg">{habit.title}</CardTitle>
+                  <p className="text-primary text-sm">{habit.description}</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-primary">Hoje</span>
-                      <span className="text-sm font-semibold text-primary">
-                        {todayCompletion}/{habit.target}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={Math.min(progressPercentage, 100)} 
-                      className="h-2"
-                    />
-                    {isCompleted && (
-                      <p className="text-green-600 text-sm mt-2 flex items-center">
-                        <CheckSquare className="h-4 w-4 mr-1" />
-                        Meta atingida!
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateHabitCompletion(habit.id, -1)}
-                      disabled={todayCompletion === 0}
-                      className="border-primary text-primary hover:bg-primary"
-                    >
-                      -
-                    </Button>
-                    <span className="text-lg font-semibold text-primary">
-                      {todayCompletion}
+                <div className="flex space-x-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEditHabit(habit)}
+                    className="border-primary text-primary hover:bg-primary"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteHabit(habit.id)}
+                    className="border-red-300 text-red-700 hover:bg-red-100"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-primary">{t('streak')}</span>
+                    <span className="text-sm font-semibold text-primary">
+                      {habit.streak} {t('days')}
                     </span>
-                    <Button
-                      size="sm"
-                      onClick={() => updateHabitCompletion(habit.id, 1)}
-                      className="bg-primary hover:bg-primary"
-                    >
-                      +
-                    </Button>
                   </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-primary flex items-center">
-                        <TrendingUp className="h-4 w-4 mr-1" />
-                        Últimos 7 dias
-                      </span>
-                      <span className="text-sm font-semibold text-primary">
-                        {Math.round(weekProgress)}%
-                      </span>
-                    </div>
-                    <Progress value={weekProgress} className="h-2" />
-                  </div>
+                  <Progress 
+                    value={Math.min(habit.streak * 10, 100)} 
+                    className="h-2"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+
+                <div className="flex justify-between items-center">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateStreak(habit.id, -1)}
+                    disabled={habit.streak === 0}
+                    className="border-primary text-primary hover:bg-primary"
+                  >
+                    -
+                  </Button>
+                  <span className="text-lg font-semibold text-primary">
+                    {habit.streak}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={() => updateStreak(habit.id, 1)}
+                    className="bg-primary hover:bg-primary"
+                  >
+                    +
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-primary">
+                    {t('frequency')}
+                  </span>
+                  <span className="text-sm font-semibold text-primary">
+                    {t(habit.frequency)}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {habits.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
             <Target className="h-12 w-12 text-primary mx-auto mb-4" />
-            <p className="text-primary">Nenhum hábito criado ainda</p>
+            <p className="text-primary">{t('noHabitsCreated')}</p>
           </CardContent>
         </Card>
       )}

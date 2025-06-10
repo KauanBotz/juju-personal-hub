@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
-
-const API_BASE = 'http://localhost:3000';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface Event {
   id: string;
@@ -22,6 +23,8 @@ interface Event {
 
 const Calendar: React.FC = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -37,43 +40,95 @@ const Calendar: React.FC = () => {
   );
 
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch(`${API_BASE}/events`);
-      if (res.ok) {
-        const data = await res.json();
-        setEvents(data.map((e: any) => ({ ...e, date: new Date(e.date) })));
-      }
-    };
-    load();
-  }, []);
+    if (user) {
+      loadEvents();
+    }
+  }, [user]);
 
-  const handleSaveEvent = () => {
-    if (!newEvent.title || !selectedDate) return;
+  const loadEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .order('date', { ascending: true });
 
-    if (editingEvent) {
-      const updated = { ...editingEvent, ...newEvent, date: selectedDate };
-      fetch(`${API_BASE}/events/${editingEvent.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updated, date: selectedDate.toISOString() }),
-      }).then(res => res.json()).then(() => {
-        setEvents(events.map(e => e.id === editingEvent.id ? updated : e));
-      });
-    } else {
-      const event: Event = { id: Date.now().toString(), ...newEvent, date: selectedDate };
-      fetch(`${API_BASE}/events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...event, date: selectedDate.toISOString() }),
-      }).then(res => res.json()).then(created => {
-        created.date = new Date(created.date);
-        setEvents([...events, created]);
+      if (error) throw error;
+
+      const formattedEvents = data.map(event => ({
+        ...event,
+        date: new Date(event.date)
+      }));
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar eventos",
+        variant: "destructive"
       });
     }
+  };
 
-    setNewEvent({ title: '', description: '', time: '' });
-    setEditingEvent(null);
-    setIsDialogOpen(false);
+  const handleSaveEvent = async () => {
+    if (!newEvent.title || !selectedDate || !user) return;
+
+    try {
+      if (editingEvent) {
+        const { error } = await supabase
+          .from('calendar_events')
+          .update({
+            title: newEvent.title,
+            description: newEvent.description,
+            time: newEvent.time,
+            date: selectedDate.toISOString().split('T')[0]
+          })
+          .eq('id', editingEvent.id);
+
+        if (error) throw error;
+
+        setEvents(events.map(e => 
+          e.id === editingEvent.id 
+            ? { ...e, ...newEvent, date: selectedDate }
+            : e
+        ));
+      } else {
+        const { data, error } = await supabase
+          .from('calendar_events')
+          .insert({
+            title: newEvent.title,
+            description: newEvent.description,
+            time: newEvent.time,
+            date: selectedDate.toISOString().split('T')[0],
+            user_id: user.id
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newEventWithDate = {
+          ...data,
+          date: new Date(data.date)
+        };
+        setEvents([...events, newEventWithDate]);
+      }
+
+      setNewEvent({ title: '', description: '', time: '' });
+      setEditingEvent(null);
+      setIsDialogOpen(false);
+
+      toast({
+        title: "Sucesso",
+        description: editingEvent ? "Evento atualizado!" : "Evento criado!"
+      });
+    } catch (error) {
+      console.error('Error saving event:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar evento",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditEvent = (event: Event) => {
@@ -86,9 +141,28 @@ const Calendar: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteEvent = (eventId: string) => {
-    fetch(`${API_BASE}/events/${eventId}`, { method: 'DELETE' })
-      .then(res => res.ok && setEvents(events.filter(event => event.id !== eventId)));
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+
+      setEvents(events.filter(event => event.id !== eventId));
+      toast({
+        title: "Sucesso",
+        description: "Evento excluído!"
+      });
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir evento",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -217,5 +291,3 @@ const Calendar: React.FC = () => {
 };
 
 export default Calendar;
-
-    

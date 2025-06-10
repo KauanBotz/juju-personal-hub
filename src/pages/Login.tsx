@@ -1,92 +1,161 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { User, Lock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login } = useAuth();
+const Login = () => {
+  const { t } = useLanguage();
+  const { signIn, signUp, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (await login(username, password)) {
+  useEffect(() => {
+    if (isAuthenticated) {
       navigate('/home');
-    } else {
-      setError('Credenciais inválidas');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await signIn(email, password);
+      if (!error) {
+        navigate('/home');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await signUp(email, password);
+      if (!error) {
+        setActiveTab('login');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-primary to-red-200">
-      <Card className="w-full max-w-sm bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl">
-        <CardHeader className="text-center mt-8">
-          <CardTitle className="text-3xl font-extrabold text-primary">
-            Seja bem-vinda Julia!
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-2 text-center">
+          <CardTitle className="text-3xl font-bold text-primary">
+            {activeTab === 'login' ? t('loginTitle') : 'Criar Conta'}
           </CardTitle>
+          <CardDescription>
+            {activeTab === 'login' ? t('loginSubtitle') : 'Preencha os dados para criar sua conta'}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6 px-6 pb-8">
-            <div className="relative">
-              <Label htmlFor="username" className="text-gray-700">
-                Usuário
-              </Label>
-              <div className="flex items-center border border-primary rounded-lg mt-1 focus-within:ring-2 focus-within:ring-primary">
-                <span className="px-3 text-primary">
-                  <User size={20} />
-                </span>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="julia.pena"
-                  className="flex-1 bg-transparent focus:outline-none py-2 pr-3 text-gray-800 placeholder-gray-400"
-                />
-              </div>
-            </div>
-            <div className="relative">
-              <Label htmlFor="password" className="text-gray-700">
-                Senha
-              </Label>
-              <div className="flex items-center border border-primary rounded-lg mt-1 focus-within:ring-2 focus-within:ring-primary">
-                <span className="px-3 text-primary">
-                  <Lock size={20} />
-                </span>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="flex-1 bg-transparent focus:outline-none py-2 pr-3 text-gray-800 placeholder-gray-400"
-                />
-              </div>
-            </div>
-            {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
-            )}
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary text-white font-semibold rounded-lg py-2 transition duration-200"
-            >
-              Entrar
-            </Button>
-            <div className="text-center mt-4">
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Esqueci minha senha
-              </Link>
-            </div>
-          </form>
-        </CardContent>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="login">Entrar</TabsTrigger>
+            <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login">
+            <form onSubmit={handleLogin}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t('email')}</Label>
+                  <Input 
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="exemplo@email.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">{t('password')}</Label>
+                    <a 
+                      href="/forgot-password"
+                      className="text-sm text-primary/80 hover:text-primary"
+                    >
+                      {t('forgotPassword')}
+                    </a>
+                  </div>
+                  <Input 
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Entrando...' : t('loginButton')}
+                </Button>
+              </CardFooter>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="signup">
+            <form onSubmit={handleSignUp}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">{t('email')}</Label>
+                  <Input 
+                    id="signup-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="exemplo@email.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">{t('password')}</Label>
+                  <Input 
+                    id="signup-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Cadastrando...' : 'Criar conta'}
+                </Button>
+              </CardFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
