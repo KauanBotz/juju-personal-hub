@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -19,7 +20,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { signOut, user } = useAuth();
   const { t } = useLanguage();
 
   const menuItems = [
@@ -43,7 +44,7 @@ export const Sidebar: React.FC = () => {
           </AvatarFallback>
         </Avatar>
         <p className="text-xs text-sidebar-foreground truncate w-full text-center">
-          {'Júlia Pena'}
+          {user?.email?.split('@')[0] || 'Usuário'}
         </p>
       </div>
 
@@ -73,7 +74,7 @@ export const Sidebar: React.FC = () => {
       {/* Logout + settings extra */}
       <div className="flex flex-col items-center pb-6 space-y-2">
         <Button
-          onClick={logout}
+          onClick={signOut}
           variant="ghost"
           className="p-2 rounded-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           title={t('logout')}

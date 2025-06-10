@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,15 @@ const Habits: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setHabits(data || []);
+      
+      // Type assertion to ensure frequency is properly typed
+      const typedHabits = (data || []).map(habit => ({
+        ...habit,
+        frequency: habit.frequency as 'daily' | 'weekly' | 'monthly',
+        status: habit.status as 'active' | 'paused'
+      }));
+      
+      setHabits(typedHabits);
     } catch (error) {
       console.error('Error loading habits:', error);
       toast({
@@ -94,7 +101,14 @@ const Habits: React.FC = () => {
           .single();
 
         if (error) throw error;
-        setHabits([data, ...habits]);
+        
+        const typedData = {
+          ...data,
+          frequency: data.frequency as 'daily' | 'weekly' | 'monthly',
+          status: data.status as 'active' | 'paused'
+        };
+        
+        setHabits([typedData, ...habits]);
       }
 
       setNewHabit({ title: '', description: '', frequency: 'daily' });
